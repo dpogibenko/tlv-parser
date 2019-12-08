@@ -1,7 +1,6 @@
 package net.pogibenko.tlv
 
 import mu.KotlinLogging
-import kotlin.experimental.and
 
 class DerTlvParser : TlvParser {
     override fun parse(bytes: ByteArray): Tlv {
@@ -26,6 +25,21 @@ class DerTlvParser : TlvParser {
     }
 
     private fun parseLength(bytes: ByteArray, offset: Int): TlvPart<Int> {
+        val lengthForm = bytes[offset].toInt().and(BitMasks.LENGTH_FORM)
+        val lengthFirst = bytes[offset].toInt().and(BitMasks.LENGTH_FIRST)
+        if (lengthForm == TlvConstants.LENGTH_DEFINITE_SHORT) {
+            log.debug { "It's short length form" }
+            return TlvPart(lengthFirst, 1)
+        } else if (lengthFirst == 0) {
+            log.debug { "It's indefinite length" }
+            throw IllegalArgumentException("Indefinite length isn't supported")
+        } else {
+            log.debug { "It's long length form" }
+            return parseLongLength(bytes, offset, lengthFirst)
+        }
+    }
+
+    private fun parseLongLength(bytes: ByteArray, offset: Int, lengthOctets: Int): TlvPart<Int> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
