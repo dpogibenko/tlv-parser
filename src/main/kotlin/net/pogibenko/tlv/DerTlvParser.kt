@@ -1,6 +1,7 @@
 package net.pogibenko.tlv
 
 import mu.KotlinLogging
+import kotlin.experimental.and
 
 class DerTlvParser : TlvParser {
     override fun parse(bytes: ByteArray): Tlv {
@@ -13,15 +14,22 @@ class DerTlvParser : TlvParser {
         return Tlv(tag.value, value.value)
     }
 
-    private fun parseValue(bytes: ByteArray, offset: Int, length: Int): TlvPart<ByteArray> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private fun parseTag(bytes: ByteArray): TlvPart<Int> {
+        val tagNum = bytes[0].toInt().and(BitMasks.TAG_NUMBER)
+        if (tagNum == BitMasks.TAG_NUMBER) {
+            log.debug { "It's long form of tag number" }
+            TODO()
+        } else {
+            log.debug { "It's short form of tag number" }
+            return TlvPart(tagNum, 1)
+        }
     }
 
     private fun parseLength(bytes: ByteArray, offset: Int): TlvPart<Int> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    private fun parseTag(bytes: ByteArray): TlvPart<Int> {
+    private fun parseValue(bytes: ByteArray, offset: Int, length: Int): TlvPart<ByteArray> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
