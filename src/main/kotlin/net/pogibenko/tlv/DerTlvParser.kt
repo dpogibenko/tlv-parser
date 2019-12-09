@@ -15,13 +15,13 @@ class DerTlvParser : TlvParser {
     }
 
     private fun parseTag(bytes: ByteArray): TlvPart<Int> {
-        val tagNum = bytes[0].toInt().and(BitMasks.TAG_NUMBER)
+        val tagNum = bytes[0].and(BitMasks.TAG_NUMBER)
         if (tagNum == BitMasks.TAG_NUMBER) {
             log.debug { "It's long form of tag number" }
             TODO()
         } else {
             log.debug { "It's short form of tag number" }
-            return TlvPart(tagNum, 1)
+            return TlvPart(tagNum.toInt(), 1)
         }
     }
 
