@@ -1,6 +1,8 @@
 package net.pogibenko.tlv
 
 import mu.KotlinLogging
+import java.math.BigInteger
+import kotlin.experimental.and
 
 class DerTlvParser : TlvParser {
     override fun parse(bytes: ByteArray): Tlv {
@@ -25,8 +27,8 @@ class DerTlvParser : TlvParser {
     }
 
     private fun parseLength(bytes: ByteArray, offset: Int): TlvPart<Int> {
-        val lengthForm = bytes[offset].toInt().and(BitMasks.LENGTH_FORM)
-        val lengthFirst = bytes[offset].toInt().and(BitMasks.LENGTH_FIRST)
+        val lengthForm = bytes[offset].and(BitMasks.LENGTH_FORM)
+        val lengthFirst = bytes[offset].and(BitMasks.LENGTH_FIRST)
         if (lengthForm == TlvConstants.LENGTH_DEFINITE_SHORT) {
             log.debug { "It's short length form" }
             return TlvPart(lengthFirst, 1)
@@ -35,12 +37,20 @@ class DerTlvParser : TlvParser {
             throw IllegalArgumentException("Indefinite length isn't supported")
         } else {
             log.debug { "It's long length form" }
-            return parseLongLength(bytes, offset, lengthFirst)
+            return parseLongLength(bytes, offset + 1, lengthFirst)
         }
     }
 
-    private fun parseLongLength(bytes: ByteArray, offset: Int, lengthOctets: Int): TlvPart<Int> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private fun parseLongLength(bytes: ByteArray, offset: Int, octetsNum: Int): TlvPart<Int> {
+        val lengthBytes = bytes.copyOfRange(offset, offset + octetsNum)
+        val length = BigInteger(lengthBytes)
+        if (octetsNum > 4) {
+            log.debug("More than 4 length octets")
+            TODO()
+        } else {
+            log.debug("Less than 4 length octets")
+            return TlvPart(length.intValueExact(), octetsNum + 1)
+        }
     }
 
     private fun parseValue(bytes: ByteArray, offset: Int, length: Int): TlvPart<ByteArray> {
