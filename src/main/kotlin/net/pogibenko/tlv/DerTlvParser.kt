@@ -29,15 +29,19 @@ class DerTlvParser : TlvParser {
     private fun parseLength(bytes: ByteArray, offset: Int): TlvPart<Int> {
         val lengthForm = bytes[offset].and(BitMasks.LENGTH_FORM)
         val lengthFirst = bytes[offset].and(BitMasks.LENGTH_FIRST).toInt()
-        if (lengthForm == TlvConstants.LENGTH_DEFINITE_SHORT) {
-            log.debug { "It's short length form" }
-            return TlvPart(lengthFirst, 1)
-        } else if (lengthFirst == 0) {
-            log.debug { "It's indefinite length" }
-            throw IllegalArgumentException("Indefinite length isn't supported")
-        } else {
-            log.debug { "It's long length form" }
-            return parseLongLength(bytes, offset + 1, lengthFirst)
+        return when {
+            lengthForm == TlvConstants.LENGTH_DEFINITE_SHORT -> {
+                log.debug { "It's short length form" }
+                TlvPart(lengthFirst, 1)
+            }
+            lengthFirst == 0 -> {
+                log.debug { "It's indefinite length" }
+                throw IllegalArgumentException("Indefinite length isn't supported")
+            }
+            else -> {
+                log.debug { "It's long length form" }
+                parseLongLength(bytes, offset + 1, lengthFirst)
+            }
         }
     }
 
