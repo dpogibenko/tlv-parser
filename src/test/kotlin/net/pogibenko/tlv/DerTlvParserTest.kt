@@ -12,5 +12,7 @@ internal class DerTlvParserTest {
                 "GCCqFAwcBAQEBBgkqhQMHAQIBAQEDQgAEZNcU0U3FTilkgaVISL/au+23vK7WktBPK+vXEQwuNzBYsqdKNruOHsm8X3GXG" +
                 "GeT5o0cv+mv4uoQwLxy1mc1+wIBXzAOBgkqhQMCGQEMAgECAQEwEQYJKoUDAhkBDAEBAgEBAgEB")
         val tlv = DerTlvParser().parse(bytes)
+        assertEquals(168, tlv.value.size)
+        assertEquals(14, tlv.tagNum)
     }
 }

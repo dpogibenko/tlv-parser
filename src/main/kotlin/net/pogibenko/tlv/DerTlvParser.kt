@@ -28,7 +28,7 @@ class DerTlvParser : TlvParser {
 
     private fun parseLength(bytes: ByteArray, offset: Int): TlvPart<Int> {
         val lengthForm = bytes[offset].and(BitMasks.LENGTH_FORM)
-        val lengthFirst = bytes[offset].and(BitMasks.LENGTH_FIRST)
+        val lengthFirst = bytes[offset].and(BitMasks.LENGTH_FIRST).toInt()
         if (lengthForm == TlvConstants.LENGTH_DEFINITE_SHORT) {
             log.debug { "It's short length form" }
             return TlvPart(lengthFirst, 1)
@@ -43,7 +43,7 @@ class DerTlvParser : TlvParser {
 
     private fun parseLongLength(bytes: ByteArray, offset: Int, octetsNum: Int): TlvPart<Int> {
         val lengthBytes = bytes.copyOfRange(offset, offset + octetsNum)
-        val length = BigInteger(lengthBytes)
+        val length = BigInteger(1, lengthBytes)
         if (octetsNum > 4) {
             log.debug("More than 4 length octets")
             TODO()
@@ -54,7 +54,7 @@ class DerTlvParser : TlvParser {
     }
 
     private fun parseValue(bytes: ByteArray, offset: Int, length: Int): TlvPart<ByteArray> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return TlvPart(bytes.copyOfRange(offset, offset + length), length)
     }
 
     companion object {
