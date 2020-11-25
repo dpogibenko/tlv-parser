@@ -19,4 +19,6 @@ jobs:
       - uses: eskatos/gradle-command-action@v1
         with:
           arguments: bintrayUpload
- 
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_KEY: ${{ secrets.BINTRAY_KEY }}
