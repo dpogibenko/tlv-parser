@@ -1,15 +1,15 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.4.20'
-    id "org.jetbrains.dokka" version "1.4.10.2"
-    id "com.jfrog.bintray" version "1.8.5"
+    id 'org.jetbrains.kotlin.jvm' version '1.4.32'
+    id "org.jetbrains.dokka" version "1.4.32"
     id "maven-publish"
 }
 
-group 'net.pogibenko.tlv-parser'
-version '1.0.0'
+group 'com.github.dpogibenko'
+version '1.0.1'
 
 repositories {
-    jcenter()
+    mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -30,17 +30,6 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publications = ['MyPublication']
-    publish = true
-    pkg {
-        repo = "maven"
-        name = "tlv-parser"
-    }
-}
-
 task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
     archiveClassifier.set("sources")
@@ -53,17 +42,10 @@ task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
 
 publishing {
     publications {
-        MyPublication(MavenPublication) {
+        gpr(MavenPublication) {
             from components.java
             artifact sourcesJar
             artifact javadocJar
-//            pom.withXml {
-//                def root = asNode()
-//                root.appendNode('description', 'Simple lib for tlv parsing')
-//                root.appendNode('name', 'tlv-parser')
-//                root.appendNode('url', 'https://github.com/dpogibenko/tlv-parser')
-//                root.children().last() + pomConfig
-//            }
         }
     }
 }
