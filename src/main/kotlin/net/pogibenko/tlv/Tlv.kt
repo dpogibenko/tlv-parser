@@ -1,6 +1,5 @@
 package net.pogibenko.tlv
 
 class Tlv(
-    val tagNum: Int,
-    val value: ByteArray
+    val tags: List<TlvTag>
 )

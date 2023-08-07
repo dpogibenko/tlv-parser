@@ -1,6 +1,6 @@
 package net.pogibenko.tlv
 
-class TlvPart<T> (
+class TagPart<T> (
     val value: T,
     val length: Int
 )

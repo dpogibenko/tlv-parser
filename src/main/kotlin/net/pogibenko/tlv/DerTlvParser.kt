@@ -7,37 +7,68 @@ import kotlin.experimental.and
 class DerTlvParser : TlvParser {
     override fun parse(bytes: ByteArray): Tlv {
         log.debug { "Parsing der-tlv" }
-        val tag = parseTag(bytes)
-        val lengthOffset = tag.length
-        val length = parseLength(bytes, lengthOffset)
-        val valueOffset = lengthOffset + length.length
-        val value = parseValue(bytes, valueOffset, length.value)
-        return Tlv(tag.value, value.value)
+        var offset = 0
+        val tags = mutableListOf<TlvTag>()
+        while (offset < bytes.size) {
+            val tag = parseTag(bytes, offset)
+            log.debug { "Tag parsed: tag number=${tag.tagNum}, tag value length=${tag.value.size}" }
+            tags.add(tag)
+            offset = tag.endOffset
+        }
+        return Tlv(tags)
     }
 
-    private fun parseTag(bytes: ByteArray): TlvPart<Int> {
-        val tagNum = bytes[0].and(BitMasks.TAG_NUMBER)
-        if (tagNum == BitMasks.TAG_NUMBER) {
+    private fun parseTag(bytes: ByteArray, offset: Int): TlvTag {
+        if (offset >= bytes.size) {
+            throw IllegalArgumentException("Tag begin offset larger than tlv length")
+        }
+        val tagNum = parseTagNumber(bytes, offset)
+        val lengthOffset = offset + tagNum.length
+        val length = parseLength(bytes, lengthOffset)
+        val valueOffset = lengthOffset + length.length
+        val tagValue = parseValue(bytes, valueOffset, length.value)
+        val endOffset = valueOffset + length.value
+        //TODO: Fill encoded tag number and isConstructed
+        return TlvTag(tagNum.value, "", false, tagValue.value, offset, endOffset)
+    }
+
+    private fun parseTagNumber(bytes: ByteArray, offset: Int): TagPart<Int> {
+        val tagNumFirstOctet = bytes[offset]
+        val firstOctetNumBits = tagNumFirstOctet.and(BitMasks.TAG_NUMBER)
+        if (firstOctetNumBits == BitMasks.TAG_NUMBER) {
             log.debug { "It's long form of tag number" }
-            TODO()
+            var tagNum = 0
+            for (i in 1..<bytes.size - offset) {
+                val octet = bytes[offset + i]
+                val isLastOctet = octet.and(BitMasks.LAST_NUM_OCTET) == 0.toByte()
+                val octetNumBits = octet.and(BitMasks.NUM_OCTET_VALUE)
+                val shift = (i - 1) * 7
+                tagNum += octetNumBits.toInt().shl(shift)
+                if (isLastOctet) {
+                    return TagPart(tagNum, i + 1)
+                }
+            }
+            throw IllegalArgumentException("Wrong tag number encoding")
         } else {
             log.debug { "It's short form of tag number" }
-            return TlvPart(tagNum.toInt(), 1)
+            return TagPart(firstOctetNumBits.toInt(), 1)
         }
     }
 
-    private fun parseLength(bytes: ByteArray, offset: Int): TlvPart<Int> {
+    private fun parseLength(bytes: ByteArray, offset: Int): TagPart<Int> {
         val lengthForm = bytes[offset].and(BitMasks.LENGTH_FORM)
         val lengthFirst = bytes[offset].and(BitMasks.LENGTH_FIRST).toInt()
         return when {
             lengthForm == TlvConstants.LENGTH_DEFINITE_SHORT -> {
                 log.debug { "It's short length form" }
-                TlvPart(lengthFirst, 1)
+                TagPart(lengthFirst, 1)
             }
+
             lengthFirst == 0 -> {
                 log.debug { "It's indefinite length" }
                 throw IllegalArgumentException("Indefinite length isn't supported")
             }
+
             else -> {
                 log.debug { "It's long length form" }
                 parseLongLength(bytes, offset + 1, lengthFirst)
@@ -45,7 +76,7 @@ class DerTlvParser : TlvParser {
         }
     }
 
-    private fun parseLongLength(bytes: ByteArray, offset: Int, octetsNum: Int): TlvPart<Int> {
+    private fun parseLongLength(bytes: ByteArray, offset: Int, octetsNum: Int): TagPart<Int> {
         val lengthBytes = bytes.copyOfRange(offset, offset + octetsNum)
         val length = BigInteger(1, lengthBytes)
         if (octetsNum > 4) {
@@ -53,12 +84,12 @@ class DerTlvParser : TlvParser {
             TODO()
         } else {
             log.debug("Less than 4 length octets")
-            return TlvPart(length.intValueExact(), octetsNum + 1)
+            return TagPart(length.intValueExact(), octetsNum + 1)
         }
     }
 
-    private fun parseValue(bytes: ByteArray, offset: Int, length: Int): TlvPart<ByteArray> {
-        return TlvPart(bytes.copyOfRange(offset, offset + length), length)
+    private fun parseValue(bytes: ByteArray, offset: Int, length: Int): TagPart<ByteArray> {
+        return TagPart(bytes.copyOfRange(offset, offset + length), length) //TODO: Don't copy array
     }
 
     companion object {
