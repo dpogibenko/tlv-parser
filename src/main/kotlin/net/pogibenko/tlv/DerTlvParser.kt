@@ -25,6 +25,7 @@ class DerTlvParser : TlvParser {
             throw IllegalArgumentException("Tag begin offset larger than tlv length")
         }
         val constructed = bytes[offset].and(BitMasks.CONSTRUCTED_TAG) == 1.toByte()
+        //TODO: parse constructed tags recursively
         val tagClass = parseTagClass(bytes[offset])
         val tagNum = parseTagNumber(bytes, offset)
         val tagNumEncoded = bytes.copyOfRange(offset, offset + tagNum.length).toHexString()
@@ -45,7 +46,8 @@ class DerTlvParser : TlvParser {
     }
 
     private fun parseTagClass(octet: Byte): TagClass {
-        val classEncoded = octet.and(BitMasks.TAG_CLASS).toUByte().toInt()
+        val classEncoded = octet.and(BitMasks.TAG_CLASS)
+            .toUByte().toInt() //cast to uByte so Int padded with zeroes, not sign
             .shr(6)
         return when(classEncoded) {
             0 -> TagClass.UNIVERSAL
